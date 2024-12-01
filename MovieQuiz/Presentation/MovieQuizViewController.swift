@@ -1,30 +1,30 @@
 import UIKit
-// MARK: Structures
-struct QuizQuestion {
-    let image: String
-    let text: String
-    let correctAnswer: Bool
-}
-
-struct QuizStepViewModel {
-    let image: UIImage
-    let question: String
-    let questionNumber: String
-}
-
-struct QuizResultsViewModel {
-    let title: String
-    let text: String
-    let buttonText: String
-}
-
 //MARK: - MovieQuizViewController
 final class MovieQuizViewController: UIViewController {
+    // MARK: - Structures
+    private struct QuizQuestion {
+        let image: String
+        let text: String
+        let correctAnswer: Bool
+    }
     
+    private struct QuizStepViewModel {
+        let image: UIImage
+        let question: String
+        let questionNumber: String
+    }
+    
+    private struct QuizResultsViewModel {
+        let title: String
+        let text: String
+        let buttonText: String
+    }
     //MARK: - IBOutlets
-    @IBOutlet weak private var counterLabel: UILabel!
-    @IBOutlet weak private var textLabel: UILabel!
-    @IBOutlet weak private var imageView: UIImageView!
+    @IBOutlet private weak var noButton: UIButton!
+    @IBOutlet private weak var yesButton: UIButton!
+    @IBOutlet private weak var counterLabel: UILabel!
+    @IBOutlet private weak var textLabel: UILabel!
+    @IBOutlet private weak var imageView: UIImageView!
     private let questions: [QuizQuestion] = [
         QuizQuestion(image: "The Godfather", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: true),
         QuizQuestion(image: "The Dark Knight", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: true),
@@ -43,6 +43,7 @@ final class MovieQuizViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        imageView.layer.cornerRadius = 20
         showFirstQuestion()
     }
     
@@ -67,17 +68,26 @@ final class MovieQuizViewController: UIViewController {
         return questionStep
     }
     
-    //MARK: IBActions
-    @IBAction private func noButtonClicked(_ sender: UIButton) {let currentQuestion = questions[currentQuestionIndex]
+    private func setButtonsEnabled(_ isEnabled: Bool) {
+        noButton.isEnabled = isEnabled
+        yesButton.isEnabled = isEnabled
+    }
+    
+    @IBAction private func noButtonClicked(_ sender: UIButton) {
+        setButtonsEnabled(false)
+        let currentQuestion = questions[currentQuestionIndex]
         let givenAnswer = false
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
     
-    @IBAction private func yesButtonClicked(_ sender: UIButton) {let currentQuestion = questions[currentQuestionIndex]
+    @IBAction private func yesButtonClicked(_ sender: UIButton) {
+        setButtonsEnabled(false)
+        let currentQuestion = questions[currentQuestionIndex]
         let givenAnswer = true
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
     
+    //MARK: - IBActions
     private func show(quiz result: QuizResultsViewModel) {
         let alert = UIAlertController(
             title: result.title,
@@ -112,6 +122,8 @@ final class MovieQuizViewController: UIViewController {
     }
     
     private func showNextQuestionOrResults() {
+        imageView.layer.borderWidth = 0
+        imageView.layer.borderColor = UIColor.clear.cgColor
         if currentQuestionIndex == questions.count - 1 {
             let alert = UIAlertController(
                 title: "Этот раунд окончен!",
@@ -124,6 +136,7 @@ final class MovieQuizViewController: UIViewController {
                 let firstQuestion = self.questions[self.currentQuestionIndex]
                 let viewModel = self.convert(model: firstQuestion)
                 self.show(quiz: viewModel)
+                self.setButtonsEnabled(true)
             }
             
             alert.addAction(action)
@@ -133,6 +146,7 @@ final class MovieQuizViewController: UIViewController {
             let nextQuestion = questions[currentQuestionIndex]
             let viewModel = convert(model: nextQuestion)
             show(quiz: viewModel)
+            setButtonsEnabled(true)
         }
     }
 }
