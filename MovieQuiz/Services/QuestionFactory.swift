@@ -1,6 +1,4 @@
-import Foundation
-
-class QuestionFactory {
+final class QuestionFactory: QuestionFactoryProtocol {
     private let questions: [QuizQuestion] = [
         QuizQuestion(image: "The Godfather", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: true),
         QuizQuestion(image: "The Dark Knight", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: true),
@@ -13,16 +11,13 @@ class QuestionFactory {
         QuizQuestion(image: "Tesla", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: false),
         QuizQuestion(image: "Vivarium", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: false)
     ]
-    func requestNextQuestion() -> QuizQuestion? {
-        guard let index = (0..<questions.count).randomElement() else {
-            return nil
-        }
-        return questions[safe: index]
-        
-    }
-    struct QuizQuestion {
-        let image: String
-        let text: String
-        let correctAnswer: Bool
+    private var currentQuestionIndex = 0
+    weak var delegate: QuestionFactoryDelegate?
+    
+    func requestNextQuestion() {
+        let question = questions[currentQuestionIndex]
+        currentQuestionIndex = (currentQuestionIndex + 1) % questions.count
+        delegate?.didReceiveNextQuestion(question: question)
     }
 }
+

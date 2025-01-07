@@ -1,5 +1,4 @@
 import UIKit
-import Foundation
 
 //MARK: - MovieQuizViewController
 final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
