@@ -34,6 +34,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         alertPresenter = AlertPresenter(viewController: self)
         
         showFirstQuestion()
+        
     }
     
     // MARK: - QuestionFactoryDelegate
