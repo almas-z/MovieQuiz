@@ -20,15 +20,18 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     //MARK: - Properties
     private var correctAnswers = 0
     private var currentQuestion: QuizQuestion?
-    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         statisticService = StatisticServiceImplementation()
+        
         presenter = MovieQuizPresenter()
+        presenter.viewController = self
+        
         let questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
         questionFactory.loadData()
         self.questionFactory = questionFactory
+        
         showLoadingIndicator()
         imageView.layer.cornerRadius = 20
         alertPresenter = AlertPresenter(viewController: self)
@@ -38,7 +41,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     // MARK: - QuestionFactoryDelegate
     func didReceiveNextQuestion(question: QuizQuestion?) {
         guard let question = question else { return }
-        currentQuestion = question
+        presenter.currentQuestion = question
         let viewModel = presenter.convert(model: question)
         
         DispatchQueue.main.async { [weak self] in
@@ -108,11 +111,11 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         if presenter.isLastQuestion() {
             statisticService.store(correct: correctAnswers, total: presenter.questionsAmount)
             let message = """
-                               Ваш результат: \(correctAnswers)/\(presenter.questionsAmount)
-                               Рекорд: \(statisticService.bestGame.correct) из \(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
-                               Количество сыгранных квизов: \(statisticService.gamesCount)
-                               Средняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%
-                               """
+                                   Ваш результат: \(correctAnswers)/\(presenter.questionsAmount)
+                                   Рекорд: \(statisticService.bestGame.correct) из \(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
+                                   Количество сыгранных квизов: \(statisticService.gamesCount)
+                                   Средняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%
+                                   """
             let alertModel = AlertModel(
                 title: "Этот раунд окончен!",
                 message: message,
@@ -129,7 +132,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         }
     }
     
-    private func showAnswerResult(isCorrect: Bool) {
+    func showAnswerResult(isCorrect: Bool) {
         if isCorrect {
             correctAnswers += 1
         }
@@ -153,16 +156,10 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     // MARK: - IBActions
     @IBAction private func noButtonClicked(_ sender: UIButton) {
-        setButtonsEnabled(false)
-        guard let currentQuestion = currentQuestion else { return }
-        let givenAnswer = false
-        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+        presenter.noButtonClicked()
     }
     
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
-        setButtonsEnabled(false)
-        guard let currentQuestion = currentQuestion else { return }
-        let givenAnswer = true
-        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+        presenter.yesButtonClicked()
     }
 }
