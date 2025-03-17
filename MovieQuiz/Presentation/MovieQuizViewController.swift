@@ -17,9 +17,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     @IBOutlet private weak var imageView: UIImageView!
     
-    //MARK: - Properties
-    private var correctAnswers = 0
-    private var currentQuestion: QuizQuestion?
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,6 +28,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         let questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
         questionFactory.loadData()
         self.questionFactory = questionFactory
+        presenter.questionFactory = questionFactory
         
         showLoadingIndicator()
         imageView.layer.cornerRadius = 20
@@ -40,13 +38,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     // MARK: - QuestionFactoryDelegate
     func didReceiveNextQuestion(question: QuizQuestion?) {
-        guard let question = question else { return }
-        presenter.currentQuestion = question
-        let viewModel = presenter.convert(model: question)
-        
-        DispatchQueue.main.async { [weak self] in
-            self?.show(quiz: viewModel)
-        }
+        presenter.didReceiveNextQuestion(question: question)
     }
     
     func didLoadDataFromServer() {
@@ -63,11 +55,36 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         setButtonsEnabled(true)
         questionFactory?.requestNextQuestion()
     }
-    
-    private func show(quiz step: QuizStepViewModel) {
+    func showAlert(model: AlertModel) {
+        alertPresenter?.showAlert(model: model)
+    }
+    func show(quiz step: QuizStepViewModel) {
         imageView.image = step.image
         textLabel.text = step.question
         counterLabel.text = step.questionNumber
+        imageView.layer.borderColor = UIColor.clear.cgColor
+        
+        setButtonsEnabled(true)
+    }
+    
+    func show(quiz result: QuizResultsViewModel) {
+        let message = """
+                                Ваш результат: \(result.text)
+                                Рекорд: \(statisticService.bestGame.correct) из \(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
+                                Количество сыгранных квизов: \(statisticService.gamesCount)
+                                Средняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%
+                                """
+        
+        let alertModel = AlertModel(
+            title: result.title,
+            message: message,
+            buttonText: result.buttonText,
+            completion: { [weak self] in
+                self?.restartGame()
+            }
+        )
+        
+        alertPresenter?.showAlert(model: alertModel)
     }
     
     private func setButtonsEnabled(_ isEnabled: Bool) {
@@ -96,7 +113,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         ) { [weak self] in
             guard let self = self else { return }
             self.presenter.resetQuestionIndex()
-            self.correctAnswers = 0
             self.questionFactory?.requestNextQuestion()
         }
         
@@ -104,52 +120,24 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     }
     
     // MARK: - Game Logic
-    private func showNextQuestionOrResults() {
-        imageView.layer.borderWidth = 0
-        imageView.layer.borderColor = UIColor.clear.cgColor
-        
-        if presenter.isLastQuestion() {
-            statisticService.store(correct: correctAnswers, total: presenter.questionsAmount)
-            let message = """
-                                   Ваш результат: \(correctAnswers)/\(presenter.questionsAmount)
-                                   Рекорд: \(statisticService.bestGame.correct) из \(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
-                                   Количество сыгранных квизов: \(statisticService.gamesCount)
-                                   Средняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%
-                                   """
-            let alertModel = AlertModel(
-                title: "Этот раунд окончен!",
-                message: message,
-                buttonText: "Сыграть ещё раз",
-                completion: { [weak self] in
-                    self?.restartGame()
-                }
-            )
-            alertPresenter?.showAlert(model: alertModel)
-        } else {
-            presenter.switchToNextQuestion()
-            questionFactory?.requestNextQuestion()
-            setButtonsEnabled(true)
-        }
-    }
-    
     func showAnswerResult(isCorrect: Bool) {
-        if isCorrect {
-            correctAnswers += 1
-        }
-        
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 8
         imageView.layer.cornerRadius = 20
         imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
         
+        setButtonsEnabled(false)
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            self?.showNextQuestionOrResults()
+            guard let self = self else { return }
+            self.presenter.questionFactory = self.questionFactory
+            self.presenter.showNextQuestionOrResults()
         }
     }
     
     private func restartGame() {
-        correctAnswers = 0
         setButtonsEnabled(true)
+        presenter.correctAnswers = 0
         presenter.resetQuestionIndex()
         questionFactory?.requestNextQuestion()
     }
