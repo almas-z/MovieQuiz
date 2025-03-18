@@ -1,12 +1,9 @@
 import UIKit
 
 //MARK: - MovieQuizViewController
-final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
+final class MovieQuizViewController: UIViewController {
     
-    //MARK: - Services
-    private var statisticService: StatisticServiceProtocol!
-    private var questionFactory: QuestionFactoryProtocol?
-    private var alertPresenter: AlertPresenter?
+    // MARK: - Services
     private var presenter: MovieQuizPresenter!
     
     //MARK: - IBOutlets
@@ -20,106 +17,37 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        statisticService = StatisticServiceImplementation()
-        
-        presenter = MovieQuizPresenter()
-        presenter.viewController = self
-        
-        let questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
-        questionFactory.loadData()
-        self.questionFactory = questionFactory
-        presenter.questionFactory = questionFactory
+        presenter = MovieQuizPresenter(viewController: self)
         
         showLoadingIndicator()
         imageView.layer.cornerRadius = 20
-        alertPresenter = AlertPresenter(viewController: self)
-        showFirstQuestion()
-    }
-    
-    // MARK: - QuestionFactoryDelegate
-    func didReceiveNextQuestion(question: QuizQuestion?) {
-        presenter.didReceiveNextQuestion(question: question)
-    }
-    
-    func didLoadDataFromServer() {
-        activityIndicator.isHidden = true
-        questionFactory?.requestNextQuestion()
-    }
-    
-    func didFailToLoadData(with error: Error) {
-        showNetworkError(message: error.localizedDescription)
     }
     
     // MARK: - UI Update Methods
-    private func showFirstQuestion() {
-        setButtonsEnabled(true)
-        questionFactory?.requestNextQuestion()
-    }
-    func showAlert(model: AlertModel) {
-        alertPresenter?.showAlert(model: model)
-    }
     func show(quiz step: QuizStepViewModel) {
         imageView.image = step.image
         textLabel.text = step.question
         counterLabel.text = step.questionNumber
         imageView.layer.borderColor = UIColor.clear.cgColor
-        
         setButtonsEnabled(true)
     }
     
     func show(quiz result: QuizResultsViewModel) {
         let message = """
-                                Ваш результат: \(result.text)
-                                Рекорд: \(statisticService.bestGame.correct) из \(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
-                                Количество сыгранных квизов: \(statisticService.gamesCount)
-                                Средняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%
-                                """
+            Ваш результат: \(result.text)
+            Рекорд: \(presenter.getBestGame().correct) из \(presenter.getBestGame().total) (\(presenter.getBestGame().date.dateTimeString))
+            Количество сыгранных квизов: \(presenter.getGamesCount())
+            Средняя точность: \(String(format: "%.2f", presenter.getTotalAccuracy()))%
+            """
         
-        let alertModel = AlertModel(
-            title: result.title,
-            message: message,
-            buttonText: result.buttonText,
-            completion: { [weak self] in
-                self?.restartGame()
-            }
-        )
-        
-        alertPresenter?.showAlert(model: alertModel)
-    }
-    
-    private func setButtonsEnabled(_ isEnabled: Bool) {
-        noButton.isEnabled = isEnabled
-        yesButton.isEnabled = isEnabled
-    }
-    
-    // MARK: - Loading Indicator
-    private func showLoadingIndicator() {
-        activityIndicator.isHidden = false
-        activityIndicator.startAnimating()
-    }
-    
-    private func hideLoadingIndicator() {
-        activityIndicator.isHidden = true
-        activityIndicator.stopAnimating()
-    }
-    
-    private func showNetworkError(message: String) {
-        hideLoadingIndicator()
-        
-        let model = AlertModel(
-            title: "Ошибка",
-            message: message,
-            buttonText: "Попробовать еще раз"
-        ) { [weak self] in
-            guard let self = self else { return }
-            self.presenter.resetQuestionIndex()
-            self.questionFactory?.requestNextQuestion()
+        let alert = UIAlertController(title: result.title, message: message, preferredStyle: .alert)
+        let action = UIAlertAction(title: result.buttonText, style: .default) { [weak self] _ in
+            self?.presenter.restartGame()
         }
-        
-        alertPresenter?.showAlert(model: model)
+        alert.addAction(action)
+        present(alert, animated: true)
     }
     
-    // MARK: - Game Logic
     func showAnswerResult(isCorrect: Bool) {
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 8
@@ -129,17 +57,35 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         setButtonsEnabled(false)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self = self else { return }
-            self.presenter.questionFactory = self.questionFactory
-            self.presenter.showNextQuestionOrResults()
+            self?.presenter.showNextQuestionOrResults()
         }
     }
     
-    private func restartGame() {
-        setButtonsEnabled(true)
-        presenter.correctAnswers = 0
-        presenter.resetQuestionIndex()
-        questionFactory?.requestNextQuestion()
+    private func setButtonsEnabled(_ isEnabled: Bool) {
+        noButton.isEnabled = isEnabled
+        yesButton.isEnabled = isEnabled
+    }
+    
+    // MARK: - Loading Indicator
+    func showLoadingIndicator() {
+        activityIndicator.isHidden = false
+        activityIndicator.startAnimating()
+    }
+    
+    func hideLoadingIndicator() {
+        activityIndicator.isHidden = true
+        activityIndicator.stopAnimating()
+    }
+    
+    func showNetworkError(message: String) {
+        hideLoadingIndicator()
+        
+        let alert = UIAlertController(title: "Ошибка", message: message, preferredStyle: .alert)
+        let action = UIAlertAction(title: "Попробовать ещё раз", style: .default) { [weak self] _ in
+            self?.presenter.restartGame()
+        }
+        alert.addAction(action)
+        present(alert, animated: true)
     }
     
     // MARK: - IBActions
