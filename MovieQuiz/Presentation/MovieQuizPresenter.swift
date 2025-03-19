@@ -4,17 +4,16 @@ import UIKit
 final class MovieQuizPresenter: QuestionFactoryDelegate {
     private let statisticService: StatisticServiceProtocol!
     private var questionFactory: QuestionFactoryProtocol?
-    private weak var viewController: MovieQuizViewController?
-    
+    private weak var viewController: MovieQuizViewControllerProtocol?
     private var currentQuestion: QuizQuestion?
     private var currentQuestionIndex = 0
     private let questionsAmount = 10
     private var correctAnswers = 0
     
-    init(viewController: MovieQuizViewController) {
+    // MARK: - Initialization
+    init(viewController: MovieQuizViewControllerProtocol) {
         self.viewController = viewController
         self.statisticService = StatisticServiceImplementation()
-
         
         questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
         questionFactory?.loadData()
@@ -44,14 +43,17 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         }
     }
     
-    private func convert(model: QuizQuestion) -> QuizStepViewModel {
+    // MARK: - Question Handling
+    
+    func convert(model: QuizQuestion) -> QuizStepViewModel {
         return QuizStepViewModel(
             image: UIImage(data: model.image) ?? UIImage(), // Исправлено!
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)"
         )
     }
-
+    
+    // MARK: - Game Flow
     
     func proceedWithAnswer(isCorrect: Bool) {
         viewController?.setButtonsEnabled(false)
@@ -73,7 +75,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     
     func proceedToNextQuestionOrResults() {
         viewController?.setButtonsEnabled(false)
-
+        
         if currentQuestionIndex == questionsAmount - 1 {
             let text = makeResultsMessage()
             let resultModel = QuizResultsViewModel(
@@ -87,6 +89,8 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
             questionFactory?.requestNextQuestion()
         }
     }
+    
+    // MARK: - Results & Statistics
     
     func makeResultsMessage() -> String {
         statisticService.store(correct: correctAnswers, total: questionsAmount)
