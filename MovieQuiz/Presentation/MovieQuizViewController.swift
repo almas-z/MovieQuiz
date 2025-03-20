@@ -16,7 +16,7 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewControllerPr
     override func viewDidLoad() {
         super.viewDidLoad()
         presenter = MovieQuizPresenter(viewController: self)
-        
+        activityIndicator.hidesWhenStopped = true
         showLoadingIndicator()
         imageView.layer.cornerRadius = 20
     }
@@ -55,12 +55,10 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewControllerPr
     // MARK: - Network & Loading Methods
     
     func showLoadingIndicator() {
-        activityIndicator.isHidden = false
         activityIndicator.startAnimating()
     }
     
     func hideLoadingIndicator() {
-        activityIndicator.isHidden = true
         activityIndicator.stopAnimating()
     }
     

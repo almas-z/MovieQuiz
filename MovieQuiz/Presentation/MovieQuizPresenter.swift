@@ -39,6 +39,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         let viewModel = convert(model: question)
         
         DispatchQueue.main.async { [weak self] in
+            self?.viewController?.hideLoadingIndicator()
             self?.viewController?.show(quiz: viewModel)
         }
     }
@@ -47,7 +48,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     
     func convert(model: QuizQuestion) -> QuizStepViewModel {
         return QuizStepViewModel(
-            image: UIImage(data: model.image) ?? UIImage(), // Исправлено!
+            image: UIImage(data: model.image) ?? UIImage(),
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)"
         )
@@ -85,6 +86,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
             )
             viewController?.show(quiz: resultModel)
         } else {
+            viewController?.showLoadingIndicator()
             currentQuestionIndex += 1
             questionFactory?.requestNextQuestion()
         }

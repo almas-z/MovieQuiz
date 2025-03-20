@@ -50,7 +50,7 @@
                                         <rect key="frame" x="0.0" y="663.66666666666663" width="400" height="106.33333333333337"/>
                                         <accessibility key="accessibilityConfiguration" identifier="Question"/>
                                         <attributedString key="attributedText">
-                                            <fragment content="Рейтинг этого фильма меньше чем 5?">
+                                            <fragment content="Рейтинг этого фильма меньше чем 8?">
                                                 <attributes>
                                                     <color key="NSColor" name="YP White"/>
                                                     <font key="NSFont" size="23" name="YSDisplay-Bold"/>
@@ -112,8 +112,8 @@
                                     </stackView>
                                 </subviews>
                             </stackView>
-                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="xYt-rX-p7o">
-                                <rect key="frame" x="210" y="468" width="20" height="20"/>
+                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="large" translatesAutoresizingMaskIntoConstraints="NO" id="xYt-rX-p7o">
+                                <rect key="frame" x="201.66666666666666" y="459.66666666666669" width="37" height="37"/>
                             </activityIndicatorView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
