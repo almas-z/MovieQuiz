@@ -18,8 +18,8 @@ final class QuestionFactory: QuestionFactoryProtocol {
             guard let movie = self.movies[safe: index] else { return }
             
             var imageData = Data()
-           
-           do {
+            
+            do {
                 imageData = try Data(contentsOf: movie.imageURL)
             } catch {
                 print("Failed to load image")
@@ -27,12 +27,12 @@ final class QuestionFactory: QuestionFactoryProtocol {
             
             let rating = Float(movie.rating) ?? 0
             
-            let text = "Рейтинг этого фильма больше чем 7?"
-            let correctAnswer = rating > 7
+            let text = "Рейтинг этого фильма больше чем 8?"
+            let correctAnswer = rating > 8
             
             let question = QuizQuestion(image: imageData,
-                                         text: text,
-                                         correctAnswer: correctAnswer)
+                                        text: text,
+                                        correctAnswer: correctAnswer)
             
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
